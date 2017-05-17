@@ -36,10 +36,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import javax.xml.bind.DatatypeConverter;
 
 /**
  * Rest access layer for sending requests to the schema registry.
@@ -131,6 +134,19 @@ public class RestService {
 
       for (Map.Entry<String, String> entry : requestProperties.entrySet()) {
         connection.setRequestProperty(entry.getKey(), entry.getValue());
+      }
+
+      String userInfo = url.getUserInfo();
+      if (userInfo != null && !userInfo.isEmpty()) {
+        // The URL contains user:password (e.g. http://user:password@host:port).
+
+        // Convert to UTF-8 bytes for base-64 encoding.
+        byte[] userInfoUtf8Bytes = userInfo.getBytes(StandardCharsets.UTF_8);
+
+        // Encode in base-64 for basic authentication.
+        String userInfoBase64 = DatatypeConverter.printBase64Binary(userInfoUtf8Bytes);
+
+        connection.setRequestProperty("Authorization", "Basic " + userInfoBase64);
       }
 
       connection.setUseCaches(false);
